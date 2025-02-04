@@ -117,8 +117,8 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
       breakPoint--;
     }
 
-    // Get the truncated text
-    final truncatedText = plainText.substring(0, breakPoint);
+    // // Get the truncated text
+    // final truncatedText = plainText.substring(0, breakPoint);
 
     // Find the position in the HTML where we should truncate
     int htmlCutoff = 0;
