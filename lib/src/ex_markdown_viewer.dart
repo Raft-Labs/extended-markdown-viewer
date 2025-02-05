@@ -230,6 +230,7 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
           firstChild: GestureDetector(
             onTap: _toggleExpanded,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 fhtml.Html(
                   data: _collapsedHtmlContent,
@@ -268,6 +269,7 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
           secondChild: GestureDetector(
             onTap: _toggleExpanded,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 fhtml.Html(
                   data: _fullHtmlContent,
