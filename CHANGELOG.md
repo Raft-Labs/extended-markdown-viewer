@@ -1,8 +1,5 @@
-## 0.0.5
-* fixed minor bug
-
-## 0.0.4
-* fixed minor bug
+## 0.0.6
+* fixed minor bugs
 
 ## 0.0.3
 * upgraded dependency

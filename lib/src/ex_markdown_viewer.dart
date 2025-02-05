@@ -237,7 +237,7 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
           ),
           secondChild: GestureDetector(
             onTap: _toggleExpanded,
-            child: Stack(
+            child: Column(
               children: [
                 fhtml.Html(
                   data: _fullHtmlContent,
