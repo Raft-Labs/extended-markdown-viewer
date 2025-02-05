@@ -13,6 +13,7 @@ class ExtendedMarkDownViewer extends StatefulWidget {
       collapsedTextColor,
       readMoreTextColor,
       readLessTextColor;
+  final CrossAxisAlignment contentAlignment;
 
   final Function(
     String? url,
@@ -42,6 +43,7 @@ class ExtendedMarkDownViewer extends StatefulWidget {
     this.readMoreTextColor,
     this.readLessTextColor,
     this.onLinkTap,
+    this.contentAlignment = CrossAxisAlignment.start,
     super.key,
   });
 
@@ -198,6 +200,16 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
         margin: fhtml.Margins.zero,
         padding: fhtml.HtmlPaddings.zero,
         color: _expanded ? widget.expandedTextColor : widget.collapsedTextColor,
+        alignment: switch (widget.contentAlignment) {
+          CrossAxisAlignment.center => Alignment.topCenter,
+          CrossAxisAlignment.end => Alignment.topRight,
+          _ => Alignment.topLeft,
+        },
+        textAlign: switch (widget.contentAlignment) {
+          CrossAxisAlignment.center => TextAlign.center,
+          CrossAxisAlignment.end => TextAlign.right,
+          _ => TextAlign.left,
+        },
       ),
       "p": fhtml.Style(
         margin: fhtml.Margins.zero,
@@ -258,7 +270,7 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
             key: ValueKey<bool>(_expanded),
             onTap: _toggleExpanded,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: widget.contentAlignment,
               mainAxisSize: MainAxisSize.min,
               children: [
                 fhtml.Html(
@@ -272,7 +284,11 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
                   },
                 ),
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: switch (widget.contentAlignment) {
+                    CrossAxisAlignment.center => Alignment.center,
+                    CrossAxisAlignment.end => Alignment.centerRight,
+                    _ => Alignment.centerLeft,
+                  },
                   child: _expanded
                       ? (widget.readLessWidget ??
                           widget._buildReadLessIcon(context))
