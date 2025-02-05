@@ -9,7 +9,9 @@ A Flutter package that provides a customizable Markdown viewer with "Read More/L
 - 🎨 Customizable appearance including text colors and read more/less widgets
 - 🔗 Customizable link tap handling
 - 📏 Configurable collapsed text length
-- 🎯 Smart text truncation that preserves HTML structure
+- 🎯 Smart text truncation that preserves Markdown structure
+- ⚡ Smooth transitions with fade animations
+- 📐 Configurable content alignment (start, center, end)
 
 ## Getting started
 
@@ -53,7 +55,9 @@ ExtendedMarkDownViewer(
   readLessTextColor: Colors.blue,
   readMoreWidget: CustomWidget(), // Custom widget for read more button
   readLessWidget: CustomWidget(), // Custom widget for read less button
-  onLinkTap: (url, context, params) {
+  contentAlignment: CrossAxisAlignment.center, // Align content center
+  isExpandable: true, // Toggle expandability
+  onLinkTap: (url, params) {
     // Handle link taps
   },
 )
@@ -71,7 +75,27 @@ ExtendedMarkDownViewer(
 - `collapsedTextColor`: Color of text when collapsed
 - `readMoreTextColor`: Color of read more text
 - `readLessTextColor`: Color of read less text
+- `contentAlignment`: Alignment of content (start, center, end)
+- `isExpandable`: Whether the content can be expanded/collapsed
 - `onLinkTap`: Callback for handling link taps
+- `readMoreWidget`: Custom widget to replace default read more button
+- `readLessWidget`: Custom widget to replace default read less button
+
+### Features in Detail
+
+#### Smart Text Truncation
+The viewer intelligently truncates text while preserving Markdown structure, ensuring that the formatting is preserved.
+
+#### Animations
+- Smooth size transitions when expanding/collapsing
+- Fade animations for content changes
+- Configurable animation durations
+
+#### Layout
+- Zero default margins and padding for clean integration
+- Customizable list indentation
+- Responsive width handling
+- Support for different text alignments
 
 ### Contributing
 
@@ -80,3 +104,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ### License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+Developed by 
+[Rohan Kumar Panigrahi](https://www.linkedin.com/in/rohan-kumar-panigrahi-187a12193/) at [RaftLabs](https://www.raftlabs.com/).
