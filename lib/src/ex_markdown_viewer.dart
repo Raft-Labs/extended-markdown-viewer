@@ -104,7 +104,6 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
   }
 
   String _createCollapsedVersion(String htmlContent) {
-    // First convert the markdown to HTML if it hasn't been converted yet
     final html = htmlContent.startsWith('<')
         ? htmlContent
         : md.markdownToHtml(
@@ -125,69 +124,65 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
       breakPoint--;
     }
 
-    // // Get the truncated text
-    // final truncatedText = plainText.substring(0, breakPoint);
-
-    // Find the position in the HTML where we should truncate
     int htmlCutoff = 0;
     int textLength = 0;
-
-    // Helper function to find the cutoff point
-    void findCutoff(String text) {
-      if (textLength >= breakPoint) return;
-
-      if (textLength + text.length > breakPoint) {
-        // This text contains our breaking point
-        htmlCutoff += (breakPoint - textLength);
-        textLength = breakPoint;
-      } else {
-        htmlCutoff += text.length;
-        textLength += text.length;
-      }
-    }
-
-    // Process the HTML character by character to find the cutoff point
     bool inTag = false;
-    int tagStart = -1;
+    final openTags = <String>[];
+    String currentTag = '';
 
     for (int i = 0; i < html.length; i++) {
       if (textLength >= breakPoint) break;
 
       if (html[i] == '<') {
         inTag = true;
-        tagStart = i;
+        currentTag = '';
       } else if (html[i] == '>') {
         inTag = false;
+        if (!currentTag.startsWith('/')) {
+          openTags.add(currentTag.split(' ')[0]); // Handle tags with attributes
+        } else {
+          final closingTag = currentTag.substring(1);
+          if (openTags.isNotEmpty && openTags.last == closingTag) {
+            openTags.removeLast();
+          }
+        }
         htmlCutoff = i + 1;
-      } else if (!inTag) {
-        findCutoff(html[i]);
+      } else if (inTag) {
+        currentTag += html[i];
+      } else {
+        if (textLength + 1 > breakPoint) break;
+        textLength++;
+        htmlCutoff = i + 1;
       }
     }
 
-    // Get all opening tags up to our cutoff point
-    final openTags = <String>[];
-    final tagRegExp = RegExp(r'<(\w+)[^>]*>');
-    final matches = tagRegExp.allMatches(html.substring(0, htmlCutoff));
+    // Clean up any incomplete list items or other structures
+    String truncatedHtml = html.substring(0, htmlCutoff);
 
-    for (final match in matches) {
-      final tag = match.group(1);
-      if (tag != null) {
-        openTags.add(tag);
+    // If we cut in the middle of a list item, find the last complete li
+    if (openTags.contains('ol') || openTags.contains('ul')) {
+      final lastCompleteListItem = RegExp(r'(<li[^>]*>.*?<\/li>)', dotAll: true)
+          .allMatches(truncatedHtml)
+          .lastOrNull;
+
+      if (lastCompleteListItem != null) {
+        truncatedHtml = truncatedHtml.substring(0, lastCompleteListItem.end);
+        // Update openTags to reflect the new cutoff point
+        openTags.clear();
+        final remainingOpenTags =
+            RegExp(r'<(\w+)[^>]*>').allMatches(truncatedHtml);
+        for (final match in remainingOpenTags) {
+          if (match.group(1) != null) {
+            openTags.add(match.group(1)!);
+          }
+        }
       }
     }
 
     // Close any open tags in reverse order
     final closingTags = openTags.reversed.map((tag) => '</$tag>').join('');
 
-    // Return the truncated HTML with read more link
-    final lastTag = openTags.lastOrNull;
-    if (lastTag == 'p' || lastTag == 'div') {
-      // If the last tag is a paragraph or div, put the read more link inside it
-      return '${html.substring(0, htmlCutoff)}...$closingTags';
-    } else {
-      // Otherwise wrap in a span to control spacing
-      return '${html.substring(0, htmlCutoff)}...$closingTags';
-    }
+    return '$truncatedHtml...$closingTags';
   }
 
   void _toggleExpanded() {
@@ -198,24 +193,39 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
 
   @override
   Widget build(BuildContext context) {
+    final htmlStyles = {
+      "body": fhtml.Style(
+        margin: fhtml.Margins.zero,
+        padding: fhtml.HtmlPaddings.zero,
+        color: _expanded ? widget.expandedTextColor : widget.collapsedTextColor,
+      ),
+      "p": fhtml.Style(
+        margin: fhtml.Margins.zero,
+        padding: fhtml.HtmlPaddings.zero,
+      ),
+      "span": fhtml.Style(
+        margin: fhtml.Margins.zero,
+        padding: fhtml.HtmlPaddings.zero,
+      ),
+      "ol": fhtml.Style(
+        margin: fhtml.Margins.zero,
+        padding: fhtml.HtmlPaddings.only(left: 16),
+      ),
+      "ul": fhtml.Style(
+        margin: fhtml.Margins.zero,
+        padding: fhtml.HtmlPaddings.only(left: 16),
+      ),
+      "li": fhtml.Style(
+        margin: fhtml.Margins.zero,
+        padding: fhtml.HtmlPaddings.zero,
+      ),
+    };
+
     if (!_shouldShowReadMore || !widget.isExpandable) {
-      // If content is shorter than maxCollapsedLength, just show the content without buttons
       return fhtml.Html(
+        shrinkWrap: true,
         data: widget.isExpandable ? _fullHtmlContent : _collapsedHtmlContent,
-        style: {
-          "body": fhtml.Style(
-              margin: fhtml.Margins.zero,
-              padding: fhtml.HtmlPaddings.zero,
-              color: widget.expandedTextColor),
-          "p": fhtml.Style(
-            margin: fhtml.Margins.zero,
-            padding: fhtml.HtmlPaddings.zero,
-          ),
-          "span": fhtml.Style(
-            margin: fhtml.Margins.zero,
-            padding: fhtml.HtmlPaddings.zero,
-          ),
-        },
+        style: htmlStyles,
         onLinkTap: (url, args, element) {
           if (widget.onLinkTap != null) {
             widget.onLinkTap!(url, args);
@@ -252,24 +262,9 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 fhtml.Html(
+                  shrinkWrap: true,
                   data: _expanded ? _fullHtmlContent : _collapsedHtmlContent,
-                  style: {
-                    "body": fhtml.Style(
-                      margin: fhtml.Margins.zero,
-                      padding: fhtml.HtmlPaddings.zero,
-                      color: _expanded
-                          ? widget.expandedTextColor
-                          : widget.collapsedTextColor,
-                    ),
-                    "p": fhtml.Style(
-                      margin: fhtml.Margins.zero,
-                      padding: fhtml.HtmlPaddings.zero,
-                    ),
-                    "span": fhtml.Style(
-                      margin: fhtml.Margins.zero,
-                      padding: fhtml.HtmlPaddings.zero,
-                    ),
-                  },
+                  style: htmlStyles,
                   onLinkTap: (url, args, element) {
                     if (widget.onLinkTap != null) {
                       widget.onLinkTap!(url, args);
