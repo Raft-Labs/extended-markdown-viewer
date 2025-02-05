@@ -51,6 +51,7 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
   bool _expanded = false;
   late String _fullHtmlContent;
   late String _collapsedHtmlContent;
+  late bool _shouldShowReadMore = false;
 
   @override
   void initState() {
@@ -81,13 +82,16 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
       final bs = BeautifulSoup(baseHtml);
       final plainText = bs.getText();
 
-      if (plainText.length > widget.maxCollapsedLength!) {
+      _shouldShowReadMore = plainText.length > widget.maxCollapsedLength!;
+
+      if (_shouldShowReadMore) {
         _collapsedHtmlContent = _createCollapsedVersion(baseHtml);
       } else {
         _collapsedHtmlContent = baseHtml;
       }
     } else {
       _collapsedHtmlContent = baseHtml;
+      _shouldShowReadMore = false;
     }
   }
 
@@ -192,6 +196,32 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_shouldShowReadMore) {
+      // If content is shorter than maxCollapsedLength, just show the content without buttons
+      return fhtml.Html(
+        data: _fullHtmlContent,
+        style: {
+          "body": fhtml.Style(
+              margin: fhtml.Margins.zero,
+              padding: fhtml.HtmlPaddings.zero,
+              color: widget.expandedTextColor),
+          "p": fhtml.Style(
+            margin: fhtml.Margins.zero,
+            padding: fhtml.HtmlPaddings.zero,
+          ),
+          "span": fhtml.Style(
+            margin: fhtml.Margins.zero,
+            padding: fhtml.HtmlPaddings.zero,
+          ),
+        },
+        onLinkTap: (url, args, element) {
+          if (widget.onLinkTap != null) {
+            widget.onLinkTap!(url, args);
+          }
+        },
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
