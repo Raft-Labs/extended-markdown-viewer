@@ -8,3 +8,5 @@
 * upgraded dependency
 
 
+## 0.0.4
+* fixed minor bug

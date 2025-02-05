@@ -13,8 +13,10 @@ class ExtendedMarkDownViewer extends StatefulWidget {
       readMoreTextColor,
       readLessTextColor;
 
-  final Function(String? url, fhtml.RenderContext context,
-      Map<String, String> queryParams)? onLinkTap;
+  final Function(
+    String? url,
+    Map<String, String> args,
+  )? onLinkTap;
 
   Widget _buildReadMoreIcon(BuildContext context) {
     return Text(readMoreText,
@@ -203,19 +205,25 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
                   data: _collapsedHtmlContent,
                   style: {
                     "body": fhtml.Style(
-                        margin: EdgeInsets.zero,
-                        padding: EdgeInsets.zero,
+                        margin: fhtml.Margins.zero,
+                        padding: fhtml.HtmlPaddings.zero,
                         color: widget.collapsedTextColor),
                     "p": fhtml.Style(
-                        margin: EdgeInsets.zero, padding: EdgeInsets.zero),
+                      margin: fhtml.Margins.zero,
+                      padding: fhtml.HtmlPaddings.zero,
+                    ),
                     "span": fhtml.Style(
-                      margin: EdgeInsets.zero,
-                      padding: EdgeInsets.zero,
+                      margin: fhtml.Margins.zero,
+                      padding: fhtml.HtmlPaddings.zero,
                     ),
                   },
-                  onLinkTap: (url, renderContext, queryParams, _) {
+                  onLinkTap: (
+                    url,
+                    args,
+                    element,
+                  ) {
                     if (widget.onLinkTap != null) {
-                      widget.onLinkTap!(url, renderContext, queryParams);
+                      widget.onLinkTap!(url, args);
                     }
                   },
                 ),
@@ -236,18 +244,22 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
                   data: _fullHtmlContent,
                   style: {
                     "body": fhtml.Style(
-                        margin: EdgeInsets.zero,
-                        padding: EdgeInsets.zero,
+                        margin: fhtml.Margins.zero,
+                        padding: fhtml.HtmlPaddings.zero,
                         color: widget.expandedTextColor),
                     "p": fhtml.Style(
-                        margin: EdgeInsets.zero, padding: EdgeInsets.zero),
+                      margin: fhtml.Margins.zero,
+                      padding: fhtml.HtmlPaddings.zero,
+                    ),
                     "span": fhtml.Style(
-                      margin: EdgeInsets.zero,
-                      padding: EdgeInsets.zero,
+                      margin: fhtml.Margins.zero,
+                      padding: fhtml.HtmlPaddings.zero,
                     ),
                   },
-                  onLinkTap: (url, renderContext, queryParams, element) {
-                    if (url != null) {}
+                  onLinkTap: (url, args, element) {
+                    if (widget.onLinkTap != null) {
+                      widget.onLinkTap!(url, args);
+                    }
                   },
                 ),
                 Positioned(
