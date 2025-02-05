@@ -199,7 +199,7 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
         AnimatedCrossFade(
           firstChild: GestureDetector(
             onTap: _toggleExpanded,
-            child: Stack(
+            child: Column(
               children: [
                 fhtml.Html(
                   data: _collapsedHtmlContent,
@@ -227,9 +227,8 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
                     }
                   },
                 ),
-                Positioned(
-                  left: 0,
-                  bottom: 0,
+                Align(
+                  alignment: Alignment.centerLeft,
                   child: widget.readMoreWidget ??
                       widget._buildReadMoreIcon(context),
                 ),
@@ -262,9 +261,8 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
                     }
                   },
                 ),
-                Positioned(
-                  left: 0,
-                  bottom: -2,
+                Align(
+                  alignment: Alignment.centerLeft,
                   child: widget.readLessWidget ??
                       widget._buildReadLessIcon(context),
                 ),
