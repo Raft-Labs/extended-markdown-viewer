@@ -6,6 +6,7 @@ import 'package:markdown/markdown.dart' as md;
 class ExtendedMarkDownViewer extends StatefulWidget {
   final String markdownText;
   final int? maxCollapsedLength;
+  final bool isExpandable;
   final Widget? readMoreWidget, readLessWidget;
   final String readMoreText, readLessText;
   final Color? expandedTextColor,
@@ -33,6 +34,7 @@ class ExtendedMarkDownViewer extends StatefulWidget {
     this.maxCollapsedLength = 80,
     this.readMoreWidget,
     this.readLessWidget,
+    this.isExpandable = true,
     this.readMoreText = "Read more",
     this.readLessText = "Read less",
     this.expandedTextColor,
@@ -55,17 +57,17 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
 
   @override
   void initState() {
-    super.initState();
     _processContent();
+    super.initState();
   }
 
-  @override
-  void didUpdateWidget(ExtendedMarkDownViewer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.markdownText != widget.markdownText) {
-      _processContent();
-    }
-  }
+  // @override
+  // void didUpdateWidget(ExtendedMarkDownViewer oldWidget) {
+  //   super.didUpdateWidget(oldWidget);
+  //   if (oldWidget.markdownText != widget.markdownText) {
+  //     _processContent();
+  //   }
+  // }
 
   void _processContent() {
     // Convert markdown to HTML with our preprocessing
@@ -84,7 +86,7 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
 
       _shouldShowReadMore = plainText.length > widget.maxCollapsedLength!;
 
-      if (_shouldShowReadMore) {
+      if (_shouldShowReadMore || !widget.isExpandable) {
         _collapsedHtmlContent = _createCollapsedVersion(baseHtml);
       } else {
         _collapsedHtmlContent = baseHtml;
@@ -196,10 +198,10 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_shouldShowReadMore) {
+    if (!_shouldShowReadMore || !widget.isExpandable) {
       // If content is shorter than maxCollapsedLength, just show the content without buttons
       return fhtml.Html(
-        data: _fullHtmlContent,
+        data: widget.isExpandable ? _fullHtmlContent : _collapsedHtmlContent,
         style: {
           "body": fhtml.Style(
               margin: fhtml.Margins.zero,
@@ -222,62 +224,43 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedCrossFade(
-          firstChild: GestureDetector(
-            onTap: _toggleExpanded,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                fhtml.Html(
-                  data: _collapsedHtmlContent,
-                  style: {
-                    "body": fhtml.Style(
-                        margin: fhtml.Margins.zero,
-                        padding: fhtml.HtmlPaddings.zero,
-                        color: widget.collapsedTextColor),
-                    "p": fhtml.Style(
-                      margin: fhtml.Margins.zero,
-                      padding: fhtml.HtmlPaddings.zero,
-                    ),
-                    "span": fhtml.Style(
-                      margin: fhtml.Margins.zero,
-                      padding: fhtml.HtmlPaddings.zero,
-                    ),
-                  },
-                  onLinkTap: (
-                    url,
-                    args,
-                    element,
-                  ) {
-                    if (widget.onLinkTap != null) {
-                      widget.onLinkTap!(url, args);
-                    }
-                  },
-                ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: widget.readMoreWidget ??
-                      widget._buildReadMoreIcon(context),
-                ),
-              ],
-            ),
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      alignment: Alignment.topLeft,
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          switchInCurve: Curves.easeInOut,
+          switchOutCurve: Curves.easeInOut,
+          layoutBuilder: (widget, list) => Stack(
+            alignment: Alignment.topLeft,
+            children: [widget!, ...list],
           ),
-          secondChild: GestureDetector(
+          transitionBuilder: (child, animation) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+          child: GestureDetector(
+            key: ValueKey<bool>(_expanded),
             onTap: _toggleExpanded,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 fhtml.Html(
-                  data: _fullHtmlContent,
+                  data: _expanded ? _fullHtmlContent : _collapsedHtmlContent,
                   style: {
                     "body": fhtml.Style(
-                        margin: fhtml.Margins.zero,
-                        padding: fhtml.HtmlPaddings.zero,
-                        color: widget.expandedTextColor),
+                      margin: fhtml.Margins.zero,
+                      padding: fhtml.HtmlPaddings.zero,
+                      color: _expanded
+                          ? widget.expandedTextColor
+                          : widget.collapsedTextColor,
+                    ),
                     "p": fhtml.Style(
                       margin: fhtml.Margins.zero,
                       padding: fhtml.HtmlPaddings.zero,
@@ -295,18 +278,17 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
                 ),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: widget.readLessWidget ??
-                      widget._buildReadLessIcon(context),
+                  child: _expanded
+                      ? (widget.readLessWidget ??
+                          widget._buildReadLessIcon(context))
+                      : (widget.readMoreWidget ??
+                          widget._buildReadMoreIcon(context)),
                 ),
               ],
             ),
           ),
-          crossFadeState:
-              _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 300),
-          sizeCurve: Curves.easeOut,
         ),
-      ],
+      ),
     );
   }
 }
