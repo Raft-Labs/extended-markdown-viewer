@@ -1,3 +1,6 @@
+## 0.1.2+3
+* bug fixes
+
 ## 0.1.2
 * added support for horizontal alignment
 * fixed empty space for list markdown

@@ -101,7 +101,9 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
 
   String _preProcessMarkdown(String content) {
     String processed = content;
+    processed = processed.replaceAll("&#x20;", "<br>");
     processed = processed.replaceAll("&#x20", "<br>");
+
     return processed;
   }
 
