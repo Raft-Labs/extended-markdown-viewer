@@ -1,3 +1,6 @@
+## 0.2.0+5
+* fixed collapse and expand logic
+
 ## 0.1.2+3
 * bug fixes
 

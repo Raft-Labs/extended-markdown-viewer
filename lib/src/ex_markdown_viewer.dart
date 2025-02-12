@@ -163,27 +163,45 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
     // Clean up any incomplete list items or other structures
     String truncatedHtml = html.substring(0, htmlCutoff);
 
-    // If we cut in the middle of a list item, find the last complete li
+    // If we're inside a list, find the last complete list item
     if (openTags.contains('ol') || openTags.contains('ul')) {
-      final lastCompleteListItem = RegExp(r'(<li[^>]*>.*?<\/li>)', dotAll: true)
-          .allMatches(truncatedHtml)
-          .lastOrNull;
+      final lastCompleteListItemMatch =
+          RegExp(r'(<li[^>]*>.*?<\/li>)', dotAll: true)
+              .allMatches(truncatedHtml)
+              .lastOrNull;
 
-      if (lastCompleteListItem != null) {
-        truncatedHtml = truncatedHtml.substring(0, lastCompleteListItem.end);
-        // Update openTags to reflect the new cutoff point
+      if (lastCompleteListItemMatch != null) {
+        truncatedHtml =
+            truncatedHtml.substring(0, lastCompleteListItemMatch.end);
+
+        // Reset openTags based on the complete structure
         openTags.clear();
-        final remainingOpenTags =
-            RegExp(r'<(\w+)[^>]*>').allMatches(truncatedHtml);
-        for (final match in remainingOpenTags) {
-          if (match.group(1) != null) {
-            openTags.add(match.group(1)!);
+        final remainingStructure = truncatedHtml;
+        bool inTag = false;
+        String currentTag = '';
+
+        for (int i = 0; i < remainingStructure.length; i++) {
+          if (remainingStructure[i] == '<') {
+            inTag = true;
+            currentTag = '';
+          } else if (remainingStructure[i] == '>') {
+            inTag = false;
+            if (!currentTag.startsWith('/')) {
+              openTags.add(currentTag.split(' ')[0]);
+            } else {
+              final closingTag = currentTag.substring(1);
+              if (openTags.isNotEmpty && openTags.last == closingTag) {
+                openTags.removeLast();
+              }
+            }
+          } else if (inTag) {
+            currentTag += remainingStructure[i];
           }
         }
       }
     }
 
-    // Close any open tags in reverse order
+    // Close any remaining open tags in reverse order
     final closingTags = openTags.reversed.map((tag) => '</$tag>').join('');
 
     return '$truncatedHtml...$closingTags';
