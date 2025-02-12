@@ -131,40 +131,29 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
     int htmlCutoff = 0;
     int textLength = 0;
     bool inTag = false;
-    final openTags = <String>[];
     String currentTag = '';
 
+    // First pass: find where to cut the HTML
     for (int i = 0; i < html.length; i++) {
       if (textLength >= breakPoint) break;
 
       if (html[i] == '<') {
         inTag = true;
-        currentTag = '';
       } else if (html[i] == '>') {
         inTag = false;
-        if (!currentTag.startsWith('/')) {
-          openTags.add(currentTag.split(' ')[0]); // Handle tags with attributes
-        } else {
-          final closingTag = currentTag.substring(1);
-          if (openTags.isNotEmpty && openTags.last == closingTag) {
-            openTags.removeLast();
-          }
-        }
         htmlCutoff = i + 1;
-      } else if (inTag) {
-        currentTag += html[i];
-      } else {
+      } else if (!inTag) {
         if (textLength + 1 > breakPoint) break;
         textLength++;
         htmlCutoff = i + 1;
       }
     }
 
-    // Clean up any incomplete list items or other structures
+    // Get the truncated HTML
     String truncatedHtml = html.substring(0, htmlCutoff);
 
     // If we're inside a list, find the last complete list item
-    if (openTags.contains('ol') || openTags.contains('ul')) {
+    if (truncatedHtml.contains('<ul') || truncatedHtml.contains('<ol')) {
       final lastCompleteListItemMatch =
           RegExp(r'(<li[^>]*>.*?<\/li>)', dotAll: true)
               .allMatches(truncatedHtml)
@@ -173,38 +162,55 @@ class _ExtendedMarkDownViewerState extends State<ExtendedMarkDownViewer> {
       if (lastCompleteListItemMatch != null) {
         truncatedHtml =
             truncatedHtml.substring(0, lastCompleteListItemMatch.end);
+      }
+    }
 
-        // Reset openTags based on the complete structure
-        openTags.clear();
-        final remainingStructure = truncatedHtml;
-        bool inTag = false;
-        String currentTag = '';
+    // Analyze the HTML structure to find truly open tags
+    final stack = <String>[];
+    final tagPattern =
+        RegExp(r'<(/?)([\w-]+)(?:\s+[^>]*?)?(/?)>', multiLine: true);
+    final matches = tagPattern.allMatches(truncatedHtml);
 
-        for (int i = 0; i < remainingStructure.length; i++) {
-          if (remainingStructure[i] == '<') {
-            inTag = true;
-            currentTag = '';
-          } else if (remainingStructure[i] == '>') {
-            inTag = false;
-            if (!currentTag.startsWith('/')) {
-              openTags.add(currentTag.split(' ')[0]);
-            } else {
-              final closingTag = currentTag.substring(1);
-              if (openTags.isNotEmpty && openTags.last == closingTag) {
-                openTags.removeLast();
-              }
-            }
-          } else if (inTag) {
-            currentTag += remainingStructure[i];
-          }
+    for (final match in matches) {
+      final isClosing = match.group(1) == '/' || match.group(3) == '/';
+      final tagName = match.group(2)!;
+
+      if (match.group(3) == '/' || _isVoidElement(tagName)) {
+        continue;
+      }
+
+      if (isClosing) {
+        if (stack.isNotEmpty && stack.last == tagName) {
+          stack.removeLast();
         }
+      } else {
+        stack.add(tagName);
       }
     }
 
     // Close any remaining open tags in reverse order
-    final closingTags = openTags.reversed.map((tag) => '</$tag>').join('');
+    final closingTags = stack.reversed.map((tag) => '</$tag>').join('');
 
     return '$truncatedHtml...$closingTags';
+  }
+
+  bool _isVoidElement(String tagName) {
+    return [
+      'area',
+      'base',
+      'br',
+      'col',
+      'embed',
+      'hr',
+      'img',
+      'input',
+      'link',
+      'meta',
+      'param',
+      'source',
+      'track',
+      'wbr'
+    ].contains(tagName.toLowerCase());
   }
 
   void _toggleExpanded() {

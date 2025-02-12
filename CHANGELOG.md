@@ -1,4 +1,4 @@
-## 0.2.0+5
+## 0.3.0
 * fixed collapse and expand logic
 
 ## 0.1.2+3
